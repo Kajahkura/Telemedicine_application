@@ -45,11 +45,11 @@ class ClinicalTeamMember(models.Model):
     specialization = models.CharField(max_length=100, blank=True, null=True) 
 
     phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be in E.164 format (e.g., +12125552368)")
-    phone_number = models.CharField(validators=[phone_regex], max_length=17 unique=True)
+    phone_number = models.CharField(validators=[phone_regex], max_length=17, unique=True)
     secondary_phone_number = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True)
     email = models.EmailField(unique=True) 
     
-    license_number = models.CharField(max_length=50, blank=True, null=True unique=True)
+    license_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
     license_state = models.CharField(max_length=50, blank=True, null=True)
     hospital_affiliation = models.CharField(max_length=200)
     department = models.CharField(max_length=100)
