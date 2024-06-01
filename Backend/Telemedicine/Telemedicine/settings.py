@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'core',
     'signup',
     'login',
+    'clinical_team',
 ]
 
 MIDDLEWARE = [
