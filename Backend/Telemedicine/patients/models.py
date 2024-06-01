@@ -37,9 +37,9 @@ class Patient(models.Model):
     gender = models.CharField(max_length=1, choices=gender_choices)
 
     phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be in E.164 format (e.g., +12125552368)")
-    phone_number = models.CharField(validators=[phone_regex], max_length=17)
+    phone_number = models.CharField(validators=[phone_regex], max_length=17, unique=True)
     secondary_phone_number = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True)
-    email = models.EmailField()
+    email = models.EmailField(unique=True)
     address = models.TextField()
 
     emergency_contact_name = models.CharField(blank=True, null=True, max_length=100)
