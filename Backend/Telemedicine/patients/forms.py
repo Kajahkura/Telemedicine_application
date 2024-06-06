@@ -22,7 +22,7 @@ class PatientRegistrationForm(forms.ModelForm):
             'emergency_contact_phone', 'preferred_language', 'occupation',
             'marital_status', 'insurance_provider', 'insurance_policy_number',
             'insurance_group_number',
-        ]
+        ] + UserCreationForm.Meta.fields
         
         labels = {
             'patient_id': 'Patient ID (MRN)',
@@ -66,11 +66,30 @@ class PatientRegistrationForm(forms.ModelForm):
         confirm_email = cleaned_data.get("confirm_email")
 
         if email and confirm_email and email != confirm_email:
-            self.add_error("confirm_email", "Email addresses do not match")
-        
-        # Patient ID uniqueness check
+            self.add_error("confirm_email", "Email addresses do not match.")
+
         patient_id = cleaned_data.get("patient_id")
         if Patient.objects.filter(patient_id=patient_id).exists():
-            self.add_error("patient_id", "Patient ID already exists")
-        
+            self.add_error("patient_id", "Patient ID already exists.")
+
         return cleaned_data
+
+
+    def save(self, commit=True):
+        """
+        Overridden save method to set the patient_id for the associated Patient object.
+        """
+        # UserCreationForm will create the user and handle password hashing
+        user = super().save(commit=False)  
+        user.email = self.cleaned_data["email"]
+        if commit:
+            user.save()
+
+        # Create and link the Patient object
+        patient = Patient.objects.create(
+            user=user,
+            **self.cleaned_data  # Pass cleaned data directly 
+        )
+        if commit:
+            patient.save()  
+        return user
