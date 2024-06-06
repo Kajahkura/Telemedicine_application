@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import RegexValidator
 
@@ -27,6 +28,7 @@ class ClinicalTeamMember(models.Model):
         notes (TextField): Additional notes or information.
     """
 
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
     member_id = models.CharField(max_length=20, unique=True, primary_key=True)
     first_name = models.CharField(max_length=50)
     middle_name = models.CharField(max_length=50, blank=True, null=True)
@@ -40,14 +42,14 @@ class ClinicalTeamMember(models.Model):
         ('RAD', 'Radiographer'),
         # Add more roles as needed
     )
-    role = models.CharField(max_length=3, choices=role_choices) 
+    role = models.CharField(max_length=3, choices=role_choices)
 
-    specialization = models.CharField(max_length=100, blank=True, null=True) 
+    specialization = models.CharField(max_length=100, blank=True, null=True)
 
     phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be in E.164 format (e.g., +12125552368)")
     phone_number = models.CharField(validators=[phone_regex], max_length=17, unique=True)
     secondary_phone_number = models.CharField(validators=[phone_regex], max_length=17, blank=True, null=True)
-    email = models.EmailField(unique=True) 
+    email = models.EmailField()
     
     license_number = models.CharField(max_length=50, blank=True, null=True, unique=True)
     license_state = models.CharField(max_length=50, blank=True, null=True)
