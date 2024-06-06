@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django.core.validators import RegexValidator
 
@@ -27,7 +28,8 @@ class Patient(models.Model):
         registration_date (DateField): Date the patient was registered in the system.
         notes (TextField): Additional notes or information about the patient (optional).
     """
-    
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='patient_profile')
     patient_id = models.CharField(max_length=20, unique=True, primary_key=True, help_text="Unique patient identifier (e.g., MRN)")
     first_name = models.CharField(max_length=50)
     middle_name = models.CharField(max_length=50, blank=True, null=True) 
