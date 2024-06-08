@@ -3,8 +3,35 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib import messages  # For displaying messages
 from .models import Patient
+from .forms import PatientRegistrationForm
 
+def register_clinical_team_member(request):
+    """
+    View to handle Patients registration.
 
+    Displays the registration form, processes the submitted data, validates it,
+    creates a new user and patient object if valid, and redirects the
+    user to the appropriate page.
+    """
+    if request.method == 'POST':
+        form = PatientRegistrationForm(request.POST, request.FILES)  # Handle file uploads
+
+        if form.is_valid():
+            try:
+                user = form.save()
+                messages.success(request, 'Patient registered successfully!')
+                # Redirect to a success page or the staff member's profile
+                return redirect('patient_login')
+            except Exception as e:  # Catch any unexpected errors
+                messages.error(request, f'An error occurred during registration: {e}')
+        else:
+            messages.error(request, 'Please correct the errors below.')
+    else:
+        form = ClinicalTeamMemberRegistrationForm()
+
+    return render(request, 'clinical_team/register.html', {'form': form})
+
+# Patients login view
 def patient_login_view(request):
     """
     Custom login view for patients.

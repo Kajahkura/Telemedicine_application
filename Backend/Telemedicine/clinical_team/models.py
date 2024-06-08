@@ -28,7 +28,7 @@ class ClinicalTeamMember(models.Model):
         notes (TextField): Additional notes or information.
     """
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, default=1)
     member_id = models.CharField(max_length=20, unique=True, primary_key=True)
     first_name = models.CharField(max_length=50)
     middle_name = models.CharField(max_length=50, blank=True, null=True)
