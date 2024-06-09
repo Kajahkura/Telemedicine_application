@@ -1,6 +1,10 @@
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from .models import Room
+from django.shortcuts import render
+
+def video_conferencing(request):
+    return render(request, video_chat/templates/video.html)
 
 def initiate_call(request):
     """Creates a new room for video consultation and returns the room name."""
@@ -20,3 +24,7 @@ def leave_call(request, room_name):
     room = get_object_or_404(Room, name=room_name)
     room.delete()
     return JsonResponse({'message': 'Left the call successfully'})
+
+def room(request, room_name):
+    room = get_object_or_404(Room, name=room_name)
+    return render(request, 'room.html', {'room': room})  # Render the template with the room name

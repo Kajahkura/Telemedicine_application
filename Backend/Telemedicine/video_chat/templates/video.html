@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Initiate Video Call</title>
+</head>
+<body>
+    <form method="POST" action="{% url 'initiate_call' %}">
+        {% csrf_token %}
+        <button type="submit">Start Video Call</button>
+    </form>
+</body>
+</html>
+
