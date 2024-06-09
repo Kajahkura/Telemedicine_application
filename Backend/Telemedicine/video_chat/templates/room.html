@@ -1,140 +1,145 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>WebRTC Video Chat</title>
-    <script src="https://simplewebrtc.com/latest-v3.js"></script>
-    <style>
-        /* Basic Styling for the video elements */
-        #localVideo, #remoteVideos video {
-            width: 300px; /* Adjust width as needed */
-            height: 225px; /* Maintain aspect ratio */
-            margin: 10px;
-        }
-    </style>
+  <title>WebRTC Video Chat</title>
+  <script src="https://simplewebrtc.com/latest-v3.js"></script>
+  <style>
+    #localVideo,
+    #remoteVideos video {
+      width: 300px;
+      height: 225px;
+      margin: 10px;
+      align: cemter;
+    }
+  </style>
 </head>
+
 <body>
+  <h1>Room: <span id="roomName"></span></h1>
+  <div>
+    <video id="localVideo" autoplay muted playsinline></video>
+    <div id="remoteVideos"></div>
+  </div>
 
-    <h1>Room: <span id="roomName"></span></h1>
-    <div>
-        <video id="localVideo" autoplay muted playsinline></video>
-        <div id="remoteVideos"></div>
-    </div>
-    <div>
-        <input type="text" id="roomNameInput" placeholder="Enter room name">
-        <button id="joinButton" disabled>Join Room</button>
-        <button id="leaveButton" disabled>Leave Room</button>
-        <button id="startButton">Start Camera</button>
-    </div>
+  <div>
+    <button id="startButton">Start Camera</button>
+    <input type="text" id="roomNameInput" placeholder="Enter room name">
+    <button id="joinButton" disabled>Join Room</button>
+    <button id="leaveButton" disabled>Leave Room</button>
+  </div>
 
-    <script>
-        let webrtc;
-        const roomNameInput = document.getElementById('roomNameInput');
-        const roomNameElem = document.getElementById('roomName');
-        const joinButton = document.getElementById('joinButton');
-        const leaveButton = document.getElementById('leaveButton');
-        const startButton = document.getElementById('startButton');
-        
-        // Initialize SimpleWebRTC after successful camera start
-        function start() {
-            webrtc = new SimpleWebRTC({
-                localVideoEl: 'localVideo',
-                remoteVideosEl: 'remoteVideos',
-                autoRequestMedia: false, // Don't request media immediately
-                url: 'https://sandbox.simplewebrtc.com:443/'
-                media: { audio: true, video: true },
-                debug: false,
-            });
+  <script>
+    let webrtc;
+    const roomNameInput = document.getElementById('roomNameInput');
+    const roomNameElem = document.getElementById('roomName');
+    const joinButton = document.getElementById('joinButton');
+    const leaveButton = document.getElementById('leaveButton');
+    const startButton = document.getElementById('startButton');
 
-            webrtc.on('readyToCall', function() {
-                joinButton.disabled = false;
-                startButton.disabled = true;
-            });
-            webrtc.startLocalVideo(); // Start the camera after initialization
+    function start() {
+      webrtc = new SimpleWebRTC({
+        localVideoEl: 'localVideo',
+        remoteVideosEl: 'remoteVideos',
+        autoRequestMedia: false,
+        media: { audio: true, video: true },
+        debug: false,
+      });
+
+      webrtc.on('readyToCall', function () {
+        joinButton.disabled = false;
+        startButton.disabled = true;
+      });
+
+      webrtc.startLocalVideo();
+    }
+
+    async function initiateCall() {
+      const roomName = prompt('Enter room name:');
+      if (roomName) {
+        try {
+          const response = await fetch('/video_chat/initiate/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'X-CSRFToken': '{{ csrf_token }}' // Django CSRF protection
+            },
+            body: new URLSearchParams({ 'room_name': roomName })
+          });
+          const data = await response.json();
+          roomNameElem.textContent = data.room_name;
+          setupWebSocket(data.room_name); 
+          await webrtc.joinRoom(data.room_name); 
+          joinButton.disabled = true;
+          leaveButton.disabled = false;
+        } catch (error) {
+          console.error('Error initiating call:', error);
+          // Handle errors gracefully here (e.g., display an error message to the user)
         }
+      }
+    }
 
-        async function initiateCall() {
-            const roomName = prompt('Enter room name:');
-            if (roomName) {
-                try {
-                    const response = await fetch('/video_chat/initiate/', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRFToken': '{{ csrf_token }}' // Django CSRF protection
-                        },
-                        body: new URLSearchParams({ 'room_name': roomName })
-                    });
 
-                    const data = await response.json();
-                    roomNameElem.textContent = data.room_name;
-
-                    setupWebSocket(data.room_name);  // Set up WebSocket connection
-                    await webrtc.joinRoom(data.room_name);  // Join the room
-
-                    joinButton.disabled = true;
-                    leaveButton.disabled = false;
-                } catch (error) {
-                    console.error('Error:', error);
-                    // Consider displaying a more user-friendly error message here
-                }
-            }
+    async function joinCall() {
+      const roomName = roomNameInput.value.trim(); // Trim whitespace
+      if (roomName) {
+        try {
+          const response = await fetch(`/video_chat/join/${roomName}/`);
+          if (!response.ok) {
+            throw new Error(`Room ${roomName} not found`);
+          }
+          const data = await response.json();
+          roomNameElem.textContent = data.room_name;
+          setupWebSocket(data.room_name);
+          webrtc.joinRoom(data.room_name);
+          joinButton.disabled = true;
+          leaveButton.disabled = false;
+        } catch (error) {
+          console.error('Error joining call:', error);
+          alert(error.message); // Display error to user
         }
+      }
+    }
 
-        async function joinCall() {
-            const roomName = roomNameInput.value;
-            if (roomName) {
-                try {
-                    const response = await fetch('/video_chat/join/' + roomName + '/');
-                    const data = await response.json();
-                    roomNameElem.textContent = data.room_name;
-
-                    webrtc.joinRoom(data.room_name);
-                    joinButton.disabled = true;
-                    leaveButton.disabled = false;
-                } catch (error) {
-                    console.error('Error:', error);
-                }
-            }
+    async function leaveCall() {
+      const roomName = roomNameElem.textContent;
+      if (roomName) {
+        try {
+          const response = await fetch('/video_chat/leave/' + roomName + '/');
+          const data = await response.json();
+          alert(data.message);
+          roomNameElem.textContent = ''; // Clear the room name
+          webrtc.leaveRoom();
+          joinButton.disabled = false;
+          leaveButton.disabled = true;
+          startButton.disabled = false;
+        } catch (error) {
+          console.error('Error leaving call:', error);
         }
+      }
+    }
 
-        async function leaveCall() {
-            const roomName = roomNameElem.textContent;
-            if (roomName) {
-                try {
-                    const response = await fetch('/video_chat/leave/' + roomName + '/');
-                    const data = await response.json();
-                    alert(data.message);
-                    roomNameElem.textContent = '';
-                    webrtc.leaveRoom();
-                    joinButton.disabled = false;
-                    leaveButton.disabled = true;
-                    startButton.disabled = false;
-                } catch (error) {
-                    console.error('Error:', error);
-                }
-            }
-        };
+    function setupWebSocket(roomName) {
+      const chatSocket = new WebSocket(
+        'ws://' + window.location.host + '/ws/video_chat/' + roomName + '/'
+      );
 
+      chatSocket.onmessage = function (e) {
+        const data = JSON.parse(e.data);
+        webrtc.handleSignal(data);
+      };
 
-        // WebSocket Setup (Moved inside joinCall and initiateCall)
-        function setupWebSocket(roomName) {
-            const chatSocket = new WebSocket(
-                'ws://' + window.location.host + '/ws/video_chat/' + roomName + '/'
-            );
+      chatSocket.onclose = function (e) {
+        console.error('Chat socket closed unexpectedly');
+      };
+    }
 
-            chatSocket.onmessage = function(e) {
-                const data = JSON.parse(e.data);
-                webrtc.handleSignal(data);
-            };
+    startButton.onclick = start;
+    joinButton.onclick = joinCall;
+    leaveButton.onclick = leaveCall;
+  </script>
 
-            chatSocket.onclose = function(e) {
-                console.error('Chat socket closed unexpectedly');
-            };
-        }
-
-        startButton.onclick = start;
-        joinButton.onclick = joinCall;
-        leaveButton.onclick = leaveCall;
-    </script>
 </body>
+
 </html>
+
